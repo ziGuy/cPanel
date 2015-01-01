@@ -1,3 +1,5 @@
+![](https://github.com/github/training-kit/blob/master/images/professortocat.png)
+
 DISCLAIMER
 Please note that not me nor cPanel, shall be liable for any damages you may sustain
 by using this script, whether direct, indirect, special, incidental or consequential,
