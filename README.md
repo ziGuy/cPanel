@@ -1,4 +1,4 @@
-![](https://github.com/github/training-kit/blob/master/images/professortocat.png)
+![cpinactiveacct](https://cloud.githubusercontent.com/assets/10366366/5593155/a6ce5628-9202-11e4-8b53-2332e56a9111.png)
 
 DISCLAIMER
 Please note that not me nor cPanel, shall be liable for any damages you may sustain
