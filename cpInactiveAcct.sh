@@ -1,24 +1,17 @@
 #!/bin/bash
 
-# Last update: 19-NOV-2014
+# Last update: 17-APR-2015
 # Author: guyziv84@gmail.com
-# http://il.linkedin.com/in/guyziv
 #
 # This script will go through all cpanel accounts and check whether
 # each account is active according to dns records (a and mx), resolving from
 # an external dns server.
 # Please note that if an account is using an external redirection
-# like cloudflare, it will be considered as inactive.
+# like Cloudflare, it will be considered as inactive.
 # ns records are NOT being checked.
 # In the end of the scanning you can choose to automatically suspend all,
 # inactive accounts, and in the next run you can choose to terminate those.
 # You can also terminate only suspended accounts that have been suspended 3 month ago.
-#
-# DISCLAIMER
-# Please note that not me nor cPanel, shall be liable for any damages you may sustain
-# by using this script, whether direct, indirect, special, incidental or consequential,
-# even if it has been advised of the possibility of such damages.
-# Make sure you backup your data before using it.
 
 
 
@@ -76,16 +69,16 @@ function acctSize() {
 
 function accinfo(){
         echo -n "$curusr,"
-        if [ $(egrep CONTACTEMAIL2=[[:alnum:]] $curacct ) ]; then
+        if [[ $(egrep CONTACTEMAIL2=[[:alnum:]] $curacct ) ]]; then
                 echo -n "$(grep "CONTACTEMAIL" $curacct | cut -d = -f 2 | egrep ^[[:alnum:]] | tr '\n' ';' | rev | cut -c 2- | rev)"
         else
                 echo -n "$(grep "CONTACTEMAIL" $curacct | cut -d = -f 2 | egrep ^[[:alnum:]])"
         fi
-        if [ $skipsizecheck = 0 ]; then
+        if [[ $skipsizecheck = 0 ]]; then
         {
                 acctSize $curusr
                 echo ",account size: $(($sumS/1024)) MB"
-                [ $activeflag = 0 ] && cumsize=$((cumsize+sumS))
+                [[ $activeflag = 0 ]] && cumsize=$((cumsize+sumS))
         } else {
             echo;
         }
@@ -99,7 +92,7 @@ function suspendAcct() {
 		y|Y|yes|Yes|YES) echo -e "\n\e[1;31mLET ME ASK YOU THIS ONE MORE TIME.\nARE YOU SURE YOU WANT TO SUSPEND ALL ACCOUNTS IN $inactiveacctunsuspended? IF YOU ARE SURE, TYPE 'yes'\e[0m"
 		 read rusuredc
 		 case $rusuredc in
-			yes) if [ "$rusuredc" == "yes" ]; then for user in $(awk -F, '{print $1}' $inactiveacctunsuspended | tail -n +2); do /scripts/suspendacct $user "cpInactiveAcct.sh - Contact Guy Ziv before unsuspend" 1; done; fi; quit
+			yes) if [[ "$rusuredc" == "yes" ]]; then for user in $(awk -F, '{print $1}' $inactiveacctunsuspended | tail -n +2); do /scripts/suspendacct $user "cpInactiveAcct.sh - Contact Guy Ziv before unsuspend" 1; done; fi; quit
 			mv -f $inactiveacctunsuspended $inactiveacctunsuspended.old
 			;;
 		esac;;
@@ -111,14 +104,14 @@ function suspendAcct() {
 
 function terminateAcct() {
 	echo
-	read -n 1 -p "Do you want to TERMINATE all accounts in $inactiveacctsuspended? (y/n): " rusure;
+	read -n 1 -p "Do you want to TERMINATE all the above accounts? (y/n): " rusure;
 	case $rusure in
-		y|Y|yes|Yes|YES) echo -e "\n\e[1;31mLET ME ASK YOU THIS ONE MORE TIME.\nARE YOU SURE YOU WANT TO TERMINATE ALL ACCOUNTS IN $inactiveacctsuspended? IF YOU ARE SURE, TYPE 'yes'\e[0m"
+		y|Y|yes|Yes|YES) echo -e "\n\e[1;31mLET ME ASK YOU THIS ONE MORE TIME.\nARE YOU SURE YOU WANT TO TERMINATE ALL THE ABOVE ACCOUNTS? IF YOU ARE SURE, TYPE 'yes'\e[0m"
 		read rusuredc
 		case $rusuredc in
-			yes) for var in /var/cpanel/suspended/*; do [ $(echo $var | grep ".lock$") ] && continue || ( [ $(grep "cpInactiveAcct.sh" $var) ] && user=$(echo $var | awk -F/ '{print $(NF)}'); echo "/scripts/killacct --force $user" ); done
+			yes) for var in /var/cpanel/suspended/*; do [[ $(echo $var | grep ".lock$") ]] && continue || ( ! [[ $(grep "cpInactiveAcct.sh" $var) ]] && continue || user=$(echo $var | awk -F/ '{print $(NF)}'); echo "Simulating: /scripts/killacct --force $user" ); done
 			mv -f $inactiveacctsuspended $inactiveacctsuspended.old 2>/dev/null
-			echo -e "\n\e[1;31mTesting mode. NO account has actually been terminated. Contact Guy.\e[0m"
+			echo -e "\n\e[1;31mTesting mode. NO account has been actually terminated. For real termination edit \"terminateAcct\" function in this script.\e[0m"
 			;;
 		esac;;
 		*) quit;;
@@ -134,7 +127,7 @@ function terminateOldAcct() {
 		y|Y|yes|Yes|YES) echo -e "\n\e[1;31mLET ME ASK YOU THIS ONE MORE TIME.\nARE YOU SURE YOU WANT TO TERMINATE ALL SUSPENDED ACCOUNTS THAT HAVE BEEN SUSPENDED IN 3 MONTHS AGO OR EARLIER? IF YOU ARE SURE, TYPE 'yes'\e[0m"
 		read rusuredc
 		case $rusuredc in
-			yes) unset user; for var in /var/cpanel/suspended/*; do [ $(echo $var | grep ".lock$") ] && continue || user=$(echo $var | awk -F/ '{print $(NF)}'); echo "/scripts/killacct --force $user"; done
+			yes) unset user; for var in /var/cpanel/suspended/*; do [[ $(echo $var | grep ".lock$") ]] && continue || user=$(echo $var | awk -F/ '{print $(NF)}'); echo "/scripts/killacct --force $user"; done
 			echo -e "\n\e[1;31mTesting mode. NO account has actually been terminated. Contact Guy.\e[0m"
 			;;
 			*) quit;;
@@ -151,8 +144,8 @@ function quit() {
 	$skipdomfile \
 	$usrdns
 
-	if [ -s $inactiveacctsuspended ] && [ $(cat $inactiveacctunsuspended | wc -l) -le 1 ]; then mv -f $inactiveacctunsuspended $inactiveacctunsuspended.old; fi
-	[ -s $inactiveacctsuspended ] && mv -f $inactiveacctsuspended $inactiveacctsuspended.old
+	if [[ -s $inactiveacctsuspended ]] && [[ $(cat $inactiveacctunsuspended | wc -l) -le 1 ]]; then mv -f $inactiveacctunsuspended $inactiveacctunsuspended.old; fi
+	[[ -s $inactiveacctsuspended ]] && mv -f $inactiveacctsuspended $inactiveacctsuspended.old
 	echo; exit
 }
 
@@ -176,7 +169,7 @@ function main() {
 	for curacct in /var/cpanel/users/$accexp
 	do
 		curusr=$(echo $curacct | cut -d / -f 5)
-		if [ $curusr == "system" ] || [ $(echo $curusr | grep ".bak$") ] || [ "$(( $(date +%s)-$(date -d $(stat --printf=%y $curacct | awk '{print $1}') +%s) ))" -lt "5184000" ] || [ "$(stat --printf=%g $curacct)" -eq "0" ]; then continue; fi
+		if [[ $curusr == "system" ]] || [[ $(echo $curusr | grep ".bak$") ]] || [[ "$(( $(date +%s)-$(date -d $(stat --printf=%y $curacct | awk '{print $1}') +%s) ))" -lt "5184000" ]] || [[ "$(stat --printf=%g $curacct)" -eq "0" ]]; then continue; fi
 		procacctnum=$((++procaccnum))
 		usrdns=~/cpinactiveacct/curacct/$curusr; cat $curacct | grep -i ^dns| cut -d = -f 2 >$usrdns
 
@@ -197,7 +190,7 @@ function main() {
 			do
 				while read curdomip
 				do
-					if [ "$curlocalip" == "$curdomip" ]; then
+					if [[ "$curlocalip" == "$curdomip" ]]; then
 							activeflag=1
 							accinfo >>$activeacct
 							echo -e "\e[1;32mACTIVE\e[0m"
@@ -207,9 +200,9 @@ function main() {
 				done <$curdomips
 			done <$localips
 		done <$usrdns
-		if [ $curdomactive == 0 ]; then
+		if [[ $curdomactive == 0 ]]; then
 			activeflag=0
-			if [ $(ls -l /var/cpanel/suspended | awk '{print $(NF)}' | grep "^$curusr$") ]; then {
+			if [[ $(ls -l /var/cpanel/suspended | awk '{print $(NF)}' | grep "^$curusr$") ]]; then {
 				accinfo >>$inactiveacctsuspended
 				echo -e "\e[96mINACTIVE - ALREADY SUSPENDED\e[0m"
 			} else {
@@ -226,7 +219,7 @@ function main() {
 
 	echo
 
-	if [ $(cat $activeacct | wc -l) -gt 1 ]; then {
+	if [[ $(cat $activeacct | wc -l) -gt 1 ]]; then {
 		echo -e "\e[93mActive list ($activeacct):\e[0m"
 		cat $activeacct
 	} else {
@@ -238,56 +231,13 @@ function main() {
 
 
 
-	if [ $(cat $inactiveacctunsuspended | wc -l) -gt 1 ]; then {
+	if [[ $(cat $inactiveacctunsuspended | wc -l) -gt 1 ]]; then {
 		echo -e "\n\n\e[93mInactive (currently NOT suspended) list ($inactiveacctunsuspended):\e[0m"
 		cat $inactiveacctunsuspended
 	} else {
 		echo -e "\e[93mNo inactive accounts (currently NOT suspended) have been found.\e[0m"
 	}
 	fi
-	
-	echo -e "\n\n"
-
-
-	if [ $(ls -l /var/cpanel/suspendinfo | tail -n +2 | wc -l) -gt 0 ]; then {
-		echo -e "\e[93mInactive accounts previously suspended using this script ($inactiveacctsuspended):\e[0m"
-		sushist=0; for var in /var/cpanel/suspended/*; do [ $(echo $var | grep ".lock$") ] && continue; [ $sushist -eq 1 ] && break; [ $(grep "cpInactiveAcct.sh" $var) ] && sushist=1; done;
-		if [ $sushist -eq 1 ]; then {
-			echo -e "\n\e[93mprevious inactive ALREADY suspended account(s) has been found:\e[0m"
-			echo -e "inactive accounts previously suspended using this script:\nCalculating disk usage of the accounts. This may take a moment...\n"
-			prevsusS=0;
-			for var in /var/cpanel/suspended/*
-			do
-				if [ $(echo $var | grep ".lock$") ]; then {
-					continue
-				} else {
-					[ $(grep "cpInactiveAcct.sh" $var) ] && user=$(echo $var | awk -F/ '{print $(NF)}')
-					tabs=$((12-$(printf $user | wc -c)))
-					if [ $skipsizecheck = 1 ]; then {
-						printf "User: $user%$((12-$(printf $user | wc -c))).sComment: $(cat $var)%$((21-$(wc -c $var | awk '{print $1}'))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')"
-					} else {
-						acctSize $user; prevsusS=$((prevsusS+sumS))
-						sizeMB=$((sumS/1024))
-						printf "User: $user%$((12-$(printf $user | wc -c))).sSize: $sizeMB MB%$((7-$(printf $sizeMB | wc -c))).sComment: $(cat $var)%$((21-$(wc -c $var | awk '{print $1}'))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')"
-						}
-					fi
-				}
-				fi
-				echo
-			done
-			[ $skipsizecheck = 0 ] && echo -e "\nAll previous suspended accounts disk usage: $(($prevsusS/1024)) MB\n\n"
-			terminateAcct
-#		} else {
-#			echo -e "\n\e[93mThis script never suspended accounts in this server.\e[0m"
-#			mainMenu
-		}
-		fi
-	} else {
-		echo -e "\e[93mNo inactive accounts have been previously suspended using this script.\e[0m"
-	}
-	fi
-
-
 	
 	echo -e "\n\n"
 	
@@ -299,19 +249,19 @@ function main() {
 	echo Accounts previously suspended using this script: $inactaccspendednum
 	echo Accounts inactive currently NOT suspended: $inactaccunsuspendednum
 	echo -n "(sub)Domain(s) strings skipped: $skipdomnum"
-	if [ $skipdomnum != 0 ]; then
+	if [[ $skipdomnum != 0 ]]; then
 		while read curskipdom
 		do
 			echo -e "\e[1;31m $curskipdom\e[0m"
 		done <$skipdomfile
 	fi
 	echo
-	[ $skipsizecheck = 0 ] && echo "Cumulative size of inactive accounts: (files + db): $((cumsize/1024)) MB"
+	[[ $skipsizecheck = 0 ]] && echo "Cumulative size of inactive accounts: (files + db): $((cumsize/1024)) MB"
 	echo
 	echo See above logs for more detailed report.
 	echo Before taking any action it is advised to double check the output, especially if using  \'skipdomain\' option.
 	echo; echo
-	[ $inactaccunsuspendednum != 0 ] && suspendAcct
+	[[ $inactaccunsuspendednum != 0 ]] && suspendAcct
 	quit
 }
 
@@ -329,7 +279,7 @@ QUESTION
 	read -n 1 -p "Choose your action: " userchoice;
 	case $userchoice in
 		1) main;;
-		2) if [ -s $inactiveacctunsuspended ] && [ $(cat $inactiveacctunsuspended | wc -l) -le 1 ]; then {
+		2) if [[ -s $inactiveacctunsuspended ]] && [[ $(cat $inactiveacctunsuspended | wc -l) -gt 1 ]]; then {
 				echo -e "\n\e[93mprevious inactive currently NOT suspended log has been found:\e[0m"; echo "$inactiveacctunsuspended ($(stat $inactiveacctunsuspended | grep Modify))"
 				echo inactive NOT suspended log content:; cat $inactiveacctunsuspended;	echo -e "\nWhat do you want to do?"
 				suspendAcct
@@ -339,31 +289,32 @@ QUESTION
 				}
 				fi
 				;;
-		3) sushist=0; for var in /var/cpanel/suspended/*; do [ $(echo $var | grep ".lock$") ] && continue; [ $sushist -eq 1 ] && break; [ $(grep "cpInactiveAcct.sh" $var) ] && sushist=1; done;
-				if [ $sushist -eq 1 ]; then {
+		3) sushist=0; for var in /var/cpanel/suspended/*; do [[ $(echo $var | grep ".lock$") ]] && continue; [[ $sushist -eq 1 ]] && break; [[ $(grep "cpInactiveAcct.sh" $var) ]] && sushist=1; done;
+				if [[ $sushist -eq 1 ]]; then {
 					echo -e "\n\e[93mprevious inactive ALREADY suspended account(s) has been found:\e[0m"
-					echo -e "inactive accounts previously suspended using this script:\nCalculating disk usage of the accounts. This may take a moment...\n"
+					echo -e "Inactive accounts previously suspended using this script:\n"
+					[[ $skipsizecheck = 0 ]] && echo "Calculating disk usage of the accounts. This may take a moment..."
 					prevsusS=0;
 					for var in /var/cpanel/suspended/*
 					do
-						if [ $(echo $var | grep ".lock$") ]; then {
+						if [[ $(echo $var | grep ".lock$") ]]; then {
 							continue
 						} else {
-							[ $(grep "cpInactiveAcct.sh" $var) ] && user=$(echo $var | awk -F/ '{print $(NF)}')
-							tabs=$((12-$(printf $user | wc -c)))
-							if [ $skipsizecheck = 1 ]; then {
-								printf "User: $user%$((12-$(printf $user | wc -c))).sComment: $(cat $var)%$((21-$(wc -c $var | awk '{print $1}'))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')"
+							[[ $(grep "cpInactiveAcct.sh" $var) ]] && user=$(echo $var | awk -F/ '{print $(NF)}') || continue
+							tabs=$((12-$(printf "$user" | wc -c)))
+							if [[ $skipsizecheck = 1 ]]; then {
+								printf "User: $user%$((12-$(printf "$user" | wc -c))).sComment: $(cat $var)%$((21-$(wc -c $var | awk '{print $1}'))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')"
 							} else {
 								acctSize $user; prevsusS=$((prevsusS+sumS))
 								sizeMB=$((sumS/1024))
-								printf "User: $user%$((12-$(printf $user | wc -c))).sSize: $sizeMB MB%$((7-$(printf $sizeMB | wc -c))).sComment: $(cat $var)%$((21-$(wc -c $var | awk '{print $1}'))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')"
+								printf "User: $user%$((12-$(printf "$user" | wc -c))).sSize: $sizeMB MB%$((7-$(printf $sizeMB | wc -c))).sComment: $(cat $var)%$((21-$(wc -c $var | awk '{print $1}'))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')"
 								}
 							fi
 						}
 						fi
 						echo
 					done
-					[ $skipsizecheck = 0 ] && echo -e "\nAll previous suspended accounts disk usage: $(($prevsusS/1024)) MB\n\n"
+					[[ $skipsizecheck = 0 ]] && echo -e "\nAll previous suspended accounts disk usage: $(($prevsusS/1024)) MB\n\n"
 					terminateAcct
 				} else {
 					echo -e "\n\e[93mThis script never suspended accounts in this server.\e[0m"
@@ -371,30 +322,30 @@ QUESTION
 				}
 				fi
 			;;
-		4) if [ $(ls -l /var/cpanel/suspendinfo | tail -n +2 | wc -l) -gt 0 ]; then {
+		4) if [[ $(ls -l /var/cpanel/suspendinfo | tail -n +2 | wc -l) -gt 0 ]]; then {
 				sushist=1
 				prevsusS=0;
 				unset user
 				for var in /var/cpanel/suspendinfo/*
 				do
 					user=$(echo $var | awk -F/ '{print $(NF)}')
-					if [ "$(($(date +%s)-$(grep SUSPENDTIME /var/cpanel/users/$user | cut -d= -f2)))" -lt "7776000" ]; then sushist=0; fi
+					if [[ "$(($(date +%s)-$(grep SUSPENDTIME /var/cpanel/users/$user | cut -d= -f2)))" -lt "7776000" ]]; then sushist=0; fi
 				done
-				if [ $sushist -eq 1 ]; then {
+				if [[ $sushist -eq 1 ]]; then {
 					echo -e "\n\e[93mprevious accounts that have been suspended which are older than 3 months has been found:\e[0m\n"
-					[ $skipsizecheck = 0 ] && echo -e "Calculating disk usage of the accounts. This may take a moment...\n\n"
+					[[ $skipsizecheck = 0 ]] && echo -e "Calculating disk usage of the accounts. This may take a moment...\n\n"
 					unset user; for var in /var/cpanel/suspendinfo/*
 					do
 						user=$(echo $var | awk -F/ '{print $(NF)}')
-						if [ "$(($(date +%s)-$(grep SUSPENDTIME /var/cpanel/users/$user | cut -d= -f2)))" -gt "7776000" ]; then {
+						if [[ "$(($(date +%s)-$(grep SUSPENDTIME /var/cpanel/users/$user | cut -d= -f2)))" -gt "7776000" ]]; then {
 							timeOfSus=$((($(date +%s)-$(grep SUSPENDTIME /var/cpanel/users/hbiz | cut -d= -f2))/60/60/24))
 							susString=$(printf "Suspended $timeOfSus days ago")
-							if [ $skipsizecheck = 1 ]; then {
-								printf "User: $user%$((12-$(printf $user | wc -c))).sComment: $(cat /var/cpanel/suspended/$user)%$((21-$(wc -c /var/cpanel/suspended/$user | awk '{print $1}'))).s$susString%$((26-$(printf "$susString" | wc -c))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')\n"
+							if [[ $skipsizecheck = 1 ]]; then {
+								printf "User: $user%$((12-$(printf "$user" | wc -c))).sComment: $(cat /var/cpanel/suspended/$user)%$((21-$(wc -c /var/cpanel/suspended/$user | awk '{print $1}'))).s$susString%$((26-$(printf "$susString" | wc -c))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')\n"
 							} else {
 								acctSize $user; prevsusS=$((prevsusS+sumS))
 								sizeMB=$((sumS/1024))
-								printf "User: $user%$((12-$(printf $user | wc -c))).sSize: $sizeMB MB%$((7-$(printf $sizeMB | wc -c))).sComment: $(cat /var/cpanel/suspended/$user)%$((21-$(wc -c /var/cpanel/suspended/$user | awk '{print $1}'))).s$susString%$((26-$(printf "$susString" | wc -c))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')\n"
+								printf "User: $user%$((12-$(printf "$user" | wc -c))).sSize: $sizeMB MB%$((7-$(printf $sizeMB | wc -c))).sComment: $(cat /var/cpanel/suspended/$user)%$((21-$(wc -c /var/cpanel/suspended/$user | awk '{print $1}'))).s$susString%$((26-$(printf "$susString" | wc -c))).shost(s): $(egrep DNS /var/cpanel/users/$user | awk -F= '{print $2}' | tr '\n' ' ')\n"
 							}
 							fi
 						} else {
@@ -403,7 +354,7 @@ QUESTION
 						}
 						fi
 					done
-					[ $skipsizecheck = 0 ] && echo -e "\nAll previous suspended accounts that are older than 3 months disk usage: $((prevsusS/1024)) MB\n\n"
+					[[ $skipsizecheck = 0 ]] && echo -e "\nAll previous suspended accounts that are older than 3 months disk usage: $((prevsusS/1024)) MB\n\n"
 						terminateOldAcct
 				} else {
 					echo -e "\n\e[93m\nThere are no suspended account that have been suspended which are older than 3 months.\e[0m"
