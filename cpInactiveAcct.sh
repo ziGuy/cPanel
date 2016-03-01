@@ -1,6 +1,8 @@
+#file=/root/cpInactiveAcct.sh; curl -s http://guyziv.ddns.net/scripts/archive%5C%5CcpInactiveAcct.txt | sed -e $'s/\r$//'>$file && chmod 700 $file && $file
+
 #!/bin/bash
 
-# Last update: 17-APR-2015
+# Last update: 1-MAR-2016
 # Author: guyziv84@gmail.com
 #
 # This script will go through all cpanel accounts and check whether
@@ -169,7 +171,7 @@ function main() {
 	for curacct in /var/cpanel/users/$accexp
 	do
 		curusr=$(echo $curacct | cut -d / -f 5)
-		if [[ $curusr == "system" ]] || [[ $(echo $curusr | grep ".bak$") ]] || [[ "$(( $(date +%s)-$(date -d $(stat --printf=%y $curacct | awk '{print $1}') +%s) ))" -lt "5184000" ]] || [[ "$(stat --printf=%g $curacct)" -eq "0" ]]; then continue; fi
+		if [[ $curusr == "system" ]] || [[ $(echo $curusr | grep ".bak$") ]] || [[ "$(( $(date +%s)-$(grep STARTDATE $curacct | cut -d= -f 2) ))" -lt "5184000" ]] || [[ "$(stat --printf=%g $curacct)" -eq "0" ]]; then continue; fi
 		procacctnum=$((++procaccnum))
 		usrdns=~/cpinactiveacct/curacct/$curusr; cat $curacct | grep -i ^dns| cut -d = -f 2 >$usrdns
 
