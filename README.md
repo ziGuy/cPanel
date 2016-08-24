@@ -1,3 +1,12 @@
+#############################################
+### I'm not maintain this script anymore. ###
+#############################################
+
+
+
+
+
+
 ![cpinactiveacct](https://cloud.githubusercontent.com/assets/10366366/5593155/a6ce5628-9202-11e4-8b53-2332e56a9111.png)
 
 DISCLAIMER
